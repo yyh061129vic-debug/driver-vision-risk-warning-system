@@ -1,0 +1,31 @@
+schema_version: 1
+
+datasets:
+  - id: cityscapes
+    purpose: drivable-area and urban semantic-segmentation baseline
+    license_review: required
+    status: candidate
+  - id: bdd100k
+    purpose: drivable-area, lane and road-object multi-task baseline
+    license_review: required
+    status: candidate
+  - id: mapillary-vistas
+    purpose: cross-region semantic generalization evaluation
+    license_review: required
+    status: candidate
+  - id: lost-and-found
+    purpose: small road-obstacle detection and segmentation evaluation
+    license_review: required
+    status: candidate
+  - id: fishyscapes
+    purpose: pixel-level anomaly evaluation
+    license_review: required
+    status: candidate
+  - id: road-anomaly-21
+    purpose: unknown road-object anomaly segmentation evaluation
+    license_review: required
+    status: candidate
+  - id: segment-me-if-you-can
+    purpose: anomaly segmentation and road-obstacle benchmarking
+    license_review: required
+    status: candidate

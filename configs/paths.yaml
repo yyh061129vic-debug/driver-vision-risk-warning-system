@@ -1,0 +1,19 @@
+schema_version: 1
+
+project_root: .
+
+source:
+  package: src/driver_vision_risk
+
+data:
+  raw: data_raw
+  processed: data_processed
+  indexes: data/indexes
+  metadata: metadata
+
+models:
+  checkpoints: checkpoints
+  checkpoint_index: checkpoints/index.yaml
+
+runtime:
+  outputs: outputs

@@ -1,0 +1,11 @@
+schema_version: 1
+
+registry: metadata/dataset_registry.yaml
+sample_index_schema: data/indexes/manifest.schema.json
+
+# 只有完成许可、类别映射、完整性与划分检查的数据集才能加入 enabled。
+enabled: []
+
+split_policy:
+  unit: sequence_or_scene
+  prevent_adjacent_frame_leakage: true

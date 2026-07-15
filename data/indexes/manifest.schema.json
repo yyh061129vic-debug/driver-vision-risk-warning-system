@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/driver-vision-risk/data-index.schema.json",
+  "title": "Driver vision dataset sample index",
+  "type": "object",
+  "required": [
+    "sample_id",
+    "dataset_id",
+    "split",
+    "image_path"
+  ],
+  "properties": {
+    "sample_id": {"type": "string", "minLength": 1},
+    "dataset_id": {"type": "string", "minLength": 1},
+    "split": {"enum": ["train", "val", "test"]},
+    "sequence_id": {"type": ["string", "null"]},
+    "scene_id": {"type": ["string", "null"]},
+    "frame_id": {"type": ["string", "integer", "null"]},
+    "timestamp": {"type": ["number", "string", "null"]},
+    "camera_id": {"type": ["string", "null"]},
+    "image_path": {"type": "string", "minLength": 1},
+    "annotation_paths": {
+      "type": "object",
+      "additionalProperties": {"type": "string"}
+    },
+    "metadata": {"type": "object"}
+  },
+  "additionalProperties": false
+}

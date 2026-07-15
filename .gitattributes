@@ -1,0 +1,14 @@
+* text=auto eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.mp4 binary
+*.pt binary
+*.pth binary
+*.onnx binary
+*.engine binary
+*.ckpt binary
+*.safetensors binary

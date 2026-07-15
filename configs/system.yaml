@@ -1,0 +1,47 @@
+schema_version: 1
+
+project:
+  name: driver-vision-risk-warning-system
+
+modules:
+  data: true
+  models: true
+  training: true
+  inference: true
+  evaluation: true
+  interfaces: true
+  simulation: true
+  risk: true
+
+status_values:
+  availability:
+    - available
+    - degraded
+    - unavailable
+  obstacle_type:
+    - known
+    - unknown
+    - uncertain
+  spatial_relation:
+    - outside
+    - near
+    - intersecting
+  risk_level:
+    - safe
+    - notice
+    - warning
+    - danger
+
+# 需求文档将以下内容列为待确认事项。确认前保持 null，禁止在核心逻辑中硬编码。
+pending_decisions:
+  camera_resolution: null
+  camera_fov: null
+  camera_mount: null
+  camera_fps: null
+  known_obstacle_classes: null
+  warning_thresholds: null
+  danger_thresholds: null
+  target_gpu: null
+  latency_budget_ms: null
+  road_replay_scope: null
+  data_compliance_requirements: null
