@@ -1,1 +1,1 @@
-"""Reproducible training entry points and experiment tracking."""
+"""可复现训练入口与实验过程追踪模块。"""

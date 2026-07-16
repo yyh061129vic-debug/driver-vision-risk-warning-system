@@ -1,1 +1,1 @@
-"""Online and replay inference pipelines."""
+"""在线输入与离线回放使用的推理流水线。"""

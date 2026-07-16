@@ -1,0 +1,125 @@
+schema_version: 1
+task: task_4_sample_visualization
+minimum_visualization_count: 20
+output_root: outputs/task4_sample_visualizations
+sample_index: data/indexes/task4_samples.jsonl
+
+license_scope:
+  reviewed_on: 2026-07-16
+  purpose: local_research_visualization_and_evaluation
+  redistribution: prohibited_for_lost_and_found_inputs_and_visualizations
+
+palette:
+  road_rgb: [16, 185, 129]
+  obstacle_rgb: [239, 68, 68]
+  obstacle_edge_rgb: [255, 255, 255]
+  road_alpha: 0.30
+  obstacle_alpha: 0.78
+
+archives:
+  lost_and_found_annotations:
+    path: data_raw/lost-and-found/gtCoarse.zip
+    official_url: https://huggingface.co/datasets/iis-esslingen/LostAndFoundDataset/resolve/main/gtCoarse.zip
+    size_bytes: 37756896
+    sha256: 53b6d3ab000f08b1fb59d70c1398eecc4d82a7baf4e9cf74fbf60d1858abe9ac
+  lost_and_found_images:
+    official_url: https://huggingface.co/datasets/iis-esslingen/LostAndFoundDataset/resolve/main/leftImg8bit.zip
+    size_bytes: 5802953400
+    sha256: 307f66002023ab597d309963b94990f5b9a8e5735ee729c3292647a66e9f2b18
+    acquisition: selected_entries_via_http_range
+  road_obstacle_21:
+    path: data_raw/segment-me-if-you-can/road-obstacle-21/dataset_ObstacleTrack.zip
+    official_url: https://zenodo.org/records/5281633/files/dataset_ObstacleTrack.zip?download=1
+    size_bytes: 207582233
+    md5: 895fb36d18765482cc291f69e63d6da6
+    sha256: 14d7f6e693cffee86c7b454191f42d936d80ec7215f4ab45a976bb46fa728e72
+
+datasets:
+  - id: lost-and-found
+    display_name: Lost and Found
+    usage: local_noncommercial_obstacle_validation
+    label_mapping:
+      road_values: [1]
+      obstacle_min_value: 2
+      obstacle_max_value: 254
+      void_values: [0, 255]
+    samples:
+      - sample_id: laf_train_01_000001_000230
+        split: train
+        sequence_id: 01_Hanns_Klemm_Str_45
+        frame_id: "000001_000230"
+      - sample_id: laf_train_01_000001_000220
+        split: train
+        sequence_id: 01_Hanns_Klemm_Str_45
+        frame_id: "000001_000220"
+      - sample_id: laf_train_03_000002_000170
+        split: train
+        sequence_id: 03_Hanns_Klemm_Str_19
+        frame_id: "000002_000170"
+      - sample_id: laf_train_03_000002_000160
+        split: train
+        sequence_id: 03_Hanns_Klemm_Str_19
+        frame_id: "000002_000160"
+      - sample_id: laf_train_11_000001_000200
+        split: train
+        sequence_id: 11_Parkplatz_Flugfeld
+        frame_id: "000001_000200"
+      - sample_id: laf_train_11_000001_000190
+        split: train
+        sequence_id: 11_Parkplatz_Flugfeld
+        frame_id: "000001_000190"
+      - sample_id: laf_test_02_000009_000230
+        split: test
+        sequence_id: 02_Hanns_Klemm_Str_44
+        frame_id: "000009_000230"
+      - sample_id: laf_test_02_000002_000180
+        split: test
+        sequence_id: 02_Hanns_Klemm_Str_44
+        frame_id: "000002_000180"
+      - sample_id: laf_test_04_000003_000140
+        split: test
+        sequence_id: 04_Maurener_Weg_8
+        frame_id: "000003_000140"
+      - sample_id: laf_test_07_000001_000230
+        split: test
+        sequence_id: 07_Festplatz_Flugfeld
+        frame_id: "000001_000230"
+
+  - id: segment-me-if-you-can
+    display_name: RoadObstacle21
+    usage: visualization_and_evaluation_only
+    label_mapping:
+      road_values: [0]
+      obstacle_values: [1]
+      void_values: [255]
+    samples:
+      - sample_id: road_obstacle_21_validation_1
+        split: val
+        scene_id: validation_1
+      - sample_id: road_obstacle_21_validation_3
+        split: val
+        scene_id: validation_3
+      - sample_id: road_obstacle_21_validation_6
+        split: val
+        scene_id: validation_6
+      - sample_id: road_obstacle_21_validation_11
+        split: val
+        scene_id: validation_11
+      - sample_id: road_obstacle_21_validation_31
+        split: val
+        scene_id: validation_31
+      - sample_id: road_obstacle_21_validation_33
+        split: val
+        scene_id: validation_33
+      - sample_id: road_obstacle_21_validation_34
+        split: val
+        scene_id: validation_34
+      - sample_id: road_obstacle_21_validation_35
+        split: val
+        scene_id: validation_35
+      - sample_id: road_obstacle_21_validation_38
+        split: val
+        scene_id: validation_38
+      - sample_id: road_obstacle_21_validation_40
+        split: val
+        scene_id: validation_40

@@ -1,0 +1,152 @@
+schema_version: 1
+captured_at: "2026-07-16T13:35:31+08:00"
+environment_role: local_development
+privacy:
+  sanitized: true
+  excluded_fields:
+    - hostname
+    - username
+    - serial_number
+    - uuid
+    - user_directory
+
+system:
+  os:
+    name: Microsoft Windows 11 家庭版 中文版
+    version: 10.0.26200
+    build: "26200"
+    architecture: 64-bit
+  timezone:
+    windows_id: China Standard Time
+    utc_offset: "+08:00"
+
+hardware:
+  cpu:
+    model: Intel Core Ultra 9 185H
+    physical_cores: 16
+    logical_processors: 22
+  memory:
+    physical_gib: 31.42
+  storage:
+    workspace_drive: "C:"
+    total_gib: 284.85
+    free_gib: 17.67
+    capacity_status: constrained
+  gpus:
+    - vendor: NVIDIA
+      model: NVIDIA GeForce RTX 4070 Laptop GPU
+      role: discrete
+      driver_version: "581.42"
+      memory_mib: 8188
+      compute_capability: "8.9"
+      source: nvidia-smi
+    - vendor: Intel
+      model: Intel Arc Graphics
+      role: integrated
+      driver_version: 32.0.101.8132
+      memory_mib: null
+      compute_capability: null
+      source: WMI Win32_VideoController
+
+cuda:
+  nvidia_smi:
+    status: installed
+    version: "581.42"
+  driver_compatibility:
+    status: available
+    maximum_cuda_version: "13.0"
+    note: 该值是驱动报告的兼容上限，不代表本机已安装 CUDA Toolkit。
+  toolkit:
+    status: not_installed
+    version: null
+    nvcc_available: false
+    cuda_path_configured: false
+  framework_runtime:
+    status: installed
+    provider: PyTorch wheel
+    version: "13.0"
+    cuda_available: true
+    visible_device: NVIDIA GeForce RTX 4070 Laptop GPU
+    note: 该运行时由PyTorch CUDA轮子携带，不代表系统已安装CUDA Toolkit或nvcc。
+
+python_environment:
+  implementation: CPython
+  version: 3.12.13
+  architecture: AMD64
+  package_manager:
+    name: pip
+    version: 25.0.1
+
+packages:
+  pyyaml:
+    status: installed
+    version: 6.0.3
+  pytest:
+    status: installed
+    version: 8.4.2
+  torch:
+    status: installed
+    version: 2.13.0+cu130
+    cuda_runtime: "13.0"
+    cuda_available: true
+    visible_device: NVIDIA GeForce RTX 4070 Laptop GPU
+  torchvision:
+    status: installed
+    version: 0.28.0+cu130
+  torchaudio:
+    status: not_installed
+    version: null
+  onnx:
+    status: not_installed
+    version: null
+  onnxruntime:
+    status: not_installed
+    version: null
+  tensorrt:
+    status: not_installed
+    version: null
+  opencv_python:
+    status: installed
+    version: 5.0.0.93
+  transformers:
+    status: installed
+    version: 5.14.0
+  numpy:
+    status: installed
+    version: 2.5.1
+  pillow:
+    status: installed
+    version: 12.3.0
+  carla:
+    status: not_installed
+    version: null
+
+tools:
+  git:
+    status: installed
+    version: 2.54.0.windows.1
+  docker:
+    status: not_installed
+    version: null
+  conda:
+    status: not_installed
+    version: null
+  cmake:
+    status: not_installed
+    version: null
+
+collection:
+  commands:
+    - Get-CimInstance Win32_OperatingSystem
+    - Get-CimInstance Win32_Processor
+    - Get-CimInstance Win32_ComputerSystem
+    - Get-CimInstance Win32_LogicalDisk
+    - Get-CimInstance Win32_VideoController
+    - nvidia-smi --query-gpu=name,driver_version,memory.total,compute_cap
+    - python importlib.metadata
+    - python torch.cuda.is_available
+  notes:
+    - 版本来自采集时的当前项目虚拟环境和本机命令行。
+    - 未安装项保留空版本，不以计划版本或驱动兼容版本代替。
+    - 当前 PyTorch 与 TorchVision 为CUDA 13.0构建，torch.cuda.is_available返回true。
+    - 系统CUDA Toolkit仍未安装；Demo使用PyTorch轮子自带CUDA运行时。

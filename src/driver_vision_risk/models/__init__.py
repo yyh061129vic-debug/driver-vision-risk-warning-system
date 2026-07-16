@@ -1,1 +1,1 @@
-"""Drivable-area, known-obstacle, anomaly and distance model adapters."""
+"""可行驶区域、已知障碍物、异常和距离模型的统一适配层。"""

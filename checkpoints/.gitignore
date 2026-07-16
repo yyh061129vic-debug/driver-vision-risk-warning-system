@@ -1,8 +1,4 @@
-*.pt
-*.pth
-*.ckpt
-*.onnx
-*.engine
-*.safetensors
-*.bin
-*.weights
+*
+!.gitignore
+!README.md
+!index.yaml

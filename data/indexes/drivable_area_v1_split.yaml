@@ -1,0 +1,105 @@
+schema_version: 1
+split_id: drivable_area_v1
+status: frozen
+frozen_on: 2026-07-16
+split_unit: sequence_or_scene
+prevent_adjacent_frame_leakage: true
+
+upstream_training_provenance:
+  dataset: Cityscapes
+  owner: upstream_checkpoint_publisher
+  local_training_samples: 0
+  note: 本地实验不训练、不微调，也不使用评测样例拟合阈值。
+
+partitions:
+  train:
+    role: none_pretrained_checkpoint_only
+    sample_count: 0
+    samples: []
+
+  development_smoke:
+    role: functional_checks_only_no_metric_selection
+    sample_count: 6
+    datasets:
+      - id: lost-and-found
+        source_split: train
+        sequence_ids:
+          - 01_Hanns_Klemm_Str_45
+          - 03_Hanns_Klemm_Str_19
+          - 11_Parkplatz_Flugfeld
+        sample_ids:
+          - laf_train_01_000001_000230
+          - laf_train_01_000001_000220
+          - laf_train_03_000002_000170
+          - laf_train_03_000002_000160
+          - laf_train_11_000001_000200
+          - laf_train_11_000001_000190
+
+  holdout_evaluation:
+    role: frozen_metric_reporting_no_tuning
+    sample_count: 34
+    datasets:
+      - id: lost-and-found
+        source_split: test
+        sample_count: 4
+        sequence_ids:
+          - 02_Hanns_Klemm_Str_44
+          - 04_Maurener_Weg_8
+          - 07_Festplatz_Flugfeld
+        sample_ids:
+          - laf_test_02_000009_000230
+          - laf_test_02_000002_000180
+          - laf_test_04_000003_000140
+          - laf_test_07_000001_000230
+      - id: road-obstacle-21
+        registry_id: segment-me-if-you-can
+        source_split: public_validation
+        sample_count: 30
+        scene_ids:
+          - validation_1
+          - validation_2
+          - validation_3
+          - validation_4
+          - validation_5
+          - validation_6
+          - validation_7
+          - validation_8
+          - validation_9
+          - validation_10
+          - validation_11
+          - validation_12
+          - validation_13
+          - validation_14
+          - validation_15
+          - validation_16
+          - validation_17
+          - validation_18
+          - validation_20
+          - validation_30
+          - validation_31
+          - validation_32
+          - validation_33
+          - validation_34
+          - validation_35
+          - validation_36
+          - validation_37
+          - validation_38
+          - validation_39
+          - validation_40
+
+label_mapping:
+  lost-and-found:
+    road_values: [1]
+    nonroad_values: [2, 254]
+    nonroad_interpretation: inclusive_range
+    void_values: [0, 255]
+  road-obstacle-21:
+    road_values: [0]
+    nonroad_values: [1]
+    nonroad_interpretation: explicit_values
+    void_values: [255]
+
+leakage_checks:
+  development_and_holdout_sample_overlap: prohibited
+  lost_and_found_sequence_overlap: prohibited
+  road_obstacle_holdout_used_for_threshold_tuning: prohibited

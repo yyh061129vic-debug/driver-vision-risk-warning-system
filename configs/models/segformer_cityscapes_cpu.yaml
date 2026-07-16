@@ -1,0 +1,45 @@
+schema_version: 1
+
+# 任务 6 冻结的 CPU 对照配置；默认交互式 Demo 已切换到 CUDA 配置。
+model:
+  id: segformer-b0-cityscapes
+  architecture: SegformerForSemanticSegmentation
+  repository: nvidia/segformer-b0-finetuned-cityscapes-1024-1024
+  revision: 21b3847fae21ddee674abd31129307b6a1235bd9
+  local_directory: checkpoints/segformer-b0-cityscapes
+  weights_file: pytorch_model.bin
+  weights_size_bytes: 14957601
+  weights_sha256: 027ed78d8ff9c535df5a66361c92b9673cca3cb923cbeb8c5802385b6b93194c
+  license: NVIDIA Source Code License for SegFormer
+  license_scope: noncommercial_research_and_evaluation_only
+  license_snapshot: metadata/licenses/segformer-b0-cityscapes-2026-07-16.md
+
+runtime:
+  framework: pytorch
+  device: cpu
+  dtype: float32
+  torch_threads: 12
+
+segmentation:
+  road_class_ids: [0]
+  road_class_names: [road]
+  confidence_threshold: null
+  note: 默认采用语义分割 argmax 结果，不额外引入未经验证的道路置信度阈值。
+
+visualization:
+  road_color_rgb: [16, 185, 129]
+  boundary_color_rgb: [255, 255, 255]
+  overlay_alpha: 0.55
+  boundary_width: 2
+
+video:
+  output_codec: mp4v
+  preserve_input_fps: true
+
+output:
+  root: outputs/task5_segmentation_demo
+  save_mask: true
+  save_boundary: true
+  save_confidence: true
+  save_overlay: true
+  save_metadata: true
