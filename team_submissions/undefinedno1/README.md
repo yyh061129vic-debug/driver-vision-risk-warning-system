@@ -1,0 +1,3 @@
+利用segformer模型进行了可行驶道路的overlay。支持视频，图片模式。
+
+请注意config里的电脑配置信息和python的内容以及版本。
