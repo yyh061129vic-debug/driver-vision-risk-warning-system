@@ -1,0 +1,12 @@
+project:
+  name: driver-vision-risk-warning-system
+
+paths:
+  data_raw: data_raw
+  data_processed: data_processed
+  data_indexes: data/indexes
+  sample_data: data/samples
+  checkpoints: checkpoints
+  metadata: metadata
+  outputs: outputs
+  docs: docs

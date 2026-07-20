@@ -1,0 +1,41 @@
+project:
+  stage: phase_1
+  milestone: repository_setup
+
+runtime:
+  python_min_version: "3.10"
+  device_preference:
+    - cuda
+    - mps
+    - cpu
+
+target_environment:
+  gpu: null
+  operating_system: null
+  cuda_version: null
+  framework: null
+
+camera:
+  source: null
+  resolution: null
+  fps: null
+
+segmentation:
+  model_name: null
+  input_width: null
+  input_height: null
+  confidence_threshold: null
+
+detection:
+  model_name: null
+  confidence_threshold: null
+  known_classes: null
+
+anomaly_detection:
+  method: null
+  threshold: null
+
+risk:
+  warning_threshold: null
+  danger_threshold: null
+  debounce_frames: null
