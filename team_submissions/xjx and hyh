@@ -1,0 +1,138 @@
+import cv2
+import torch
+import numpy as np
+from ultralytics import YOLO
+from pathlib import Path
+import os
+
+# ============================================================
+# 1. 加载模型
+# ============================================================
+print("正在加载 YOLOv8-seg 模型...")
+model_yolo = YOLO('yolov8l-seg.pt')  # 用于图片处理
+print("✅ YOLOv8 加载完成！")
+
+print("正在加载 YOLOP 模型（首次会下载权重）...")
+model_yolop = torch.hub.load('hustvl/yolop', 'yolop', pretrained=True)
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model_yolop.to(device).eval()
+print("✅ YOLOP 加载完成！\n")
+
+# ============================================================
+# 配置区
+# ============================================================
+IMAGE_INPUT_DIR = 'test_images'
+IMAGE_OUTPUT_DIR = 'segmentation_results'
+VIDEO_INPUT_PATH = 'test_video.mp4'
+VIDEO_OUTPUT_PATH = 'road_video.mp4'   # 输出道路分割视频
+SHOW_VIDEO = True
+
+# ============================================================
+# 2. 图片处理（使用 YOLOv8，检测障碍物）
+# ============================================================
+def process_image_yolo(img, model):
+    results = model(img)
+    return results[0].plot()
+
+def process_images():
+    Path(IMAGE_OUTPUT_DIR).mkdir(parents=True, exist_ok=True)
+    exts = ('.jpg', '.jpeg', '.png', '.bmp', '.tiff')
+    images = [p for p in Path(IMAGE_INPUT_DIR).glob('*') if p.suffix.lower() in exts]
+    if not images:
+        print(f"⚠️ 在 '{IMAGE_INPUT_DIR}' 中未找到图片。")
+        return
+    print(f"找到 {len(images)} 张图片，开始处理...")
+    for i, img_path in enumerate(images, 1):
+        print(f"  ({i}/{len(images)}) {img_path.name}")
+        img = cv2.imread(str(img_path))
+        if img is None:
+            continue
+        annotated = process_image_yolo(img, model_yolo)
+        out_path = Path(IMAGE_OUTPUT_DIR) / f"seg_{img_path.stem}.jpg"
+        cv2.imwrite(str(out_path), annotated)
+    print(f"✅ 图片处理完成，结果保存在 '{IMAGE_OUTPUT_DIR}'\n")
+
+# ============================================================
+# 3. 视频处理（使用 YOLOP，分割可行驶区域）
+# ============================================================
+def process_video_yolop():
+    if not VIDEO_INPUT_PATH or not os.path.exists(VIDEO_INPUT_PATH):
+        print("⚠️ 视频文件不存在，跳过。")
+        return
+
+    cap = cv2.VideoCapture(VIDEO_INPUT_PATH)
+    if not cap.isOpened():
+        print("⚠️ 无法打开视频文件。")
+        return
+
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    print(f"视频信息: {width}x{height}, {fps} fps, {total} 帧")
+
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(VIDEO_OUTPUT_PATH, fourcc, fps, (width, height))
+
+    # ========== 修改：调大显示窗口尺寸 ==========
+    if SHOW_VIDEO:
+        cv2.namedWindow('Drivable Area', cv2.WINDOW_NORMAL)
+        # 设置更大的显示尺寸
+        display_width = 1280   # 从 960 调大到 1280
+        display_height = int(height * (display_width / width))
+        # 如果高度超出屏幕，则按高度适配
+        if display_height > 900:   # 从 720 调大到 900
+            display_height = 900
+            display_width = int(width * (display_height / height))
+        cv2.resizeWindow('Drivable Area', display_width, display_height)
+        print(f"显示窗口大小: {display_width}x{display_height}")
+    # ======================================================
+
+    frame_count = 0
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+        frame_count += 1
+        if frame_count % max(1, total // 20) == 0:
+            print(f"  处理帧: {frame_count}/{total}")
+
+        # 将 numpy 转为 torch 张量
+        img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        img_tensor = torch.from_numpy(img_rgb).float().permute(2, 0, 1) / 255.0
+        img_tensor = img_tensor.unsqueeze(0).to(device)
+
+        with torch.no_grad():
+            det_out, da_seg_out, ll_seg_out = model_yolop(img_tensor)
+
+        # 提取可行驶区域掩膜
+        da_pred = torch.argmax(da_seg_out, dim=1).squeeze(0).cpu().numpy()
+        da_resized = cv2.resize(da_pred, (width, height), interpolation=cv2.INTER_NEAREST)
+
+        # 绿色半透明叠加
+        overlay = frame.copy()
+        mask = (da_resized == 1).astype(np.uint8)
+        if mask.sum() > 0:
+            green = np.zeros_like(frame, dtype=np.uint8)
+            green[:, :, 1] = 255
+            alpha = 0.5
+            overlay[mask == 1] = cv2.addWeighted(frame, 1 - alpha, green, alpha, 0)[mask == 1]
+
+        out.write(overlay)
+        
+        if SHOW_VIDEO:
+            cv2.imshow('Drivable Area', overlay)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+    cap.release()
+    out.release()
+    cv2.destroyAllWindows()
+    print(f"✅ 视频处理完成，输出文件: {VIDEO_OUTPUT_PATH}\n")
+
+# ============================================================
+# 主入口（先图片，后视频）
+# ============================================================
+if __name__ == '__main__':
+    process_images()              # 先处理图片
+    process_video_yolop()         # 再处理视频
