@@ -1,1 +1,1 @@
-"""CARLA connectivity, scenario generation and ground-truth export."""
+"""CARLA 连接、场景生成和仿真真值导出模块。"""

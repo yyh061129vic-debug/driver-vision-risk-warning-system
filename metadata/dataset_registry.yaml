@@ -1,31 +1,355 @@
-schema_version: 1
+schema_version: 2
+reviewed_on: 2026-07-16
+review_scope: preliminary_official_source_review
 
+# 本登记表用于下载前决策，不构成法律意见。任何数据集加入 enabled 前，
+# 都必须保存下载当日的许可/条款快照并由项目负责人确认用途兼容性。
 datasets:
   - id: cityscapes
-    purpose: drivable-area and urban semantic-segmentation baseline
-    license_review: required
-    status: candidate
+    display_name: Cityscapes
+    version_scope: core_2d_dataset
+    status: researched_not_enabled
+    tasks:
+      - semantic_segmentation
+      - instance_segmentation
+      - panoptic_segmentation
+      - drivable_area_mapping
+    scale:
+      summary: 5000 fine-annotated images, 20000 coarse-annotated images, 50 cities
+      annotated_classes: 30
+      evaluation_classes: 19
+    labels:
+      summary: pixel-level semantic, instance and panoptic labels with stereo and vehicle metadata
+      category_scope: urban street scene semantics
+    license:
+      name: Cityscapes Dataset License Agreement
+      review_status: verified_restrictive
+      commercial_use: prohibited
+      redistribution: prohibited
+      obligations:
+        - registration and acceptance of current terms
+        - cite the Cityscapes publication or website
+        - do not share original or reconstructable modified data
+        - review privacy obligations before publishing imagery
+      note: Non-commercial scientific use only; trained abstract models may be shared only when the data cannot be reconstructed.
+    download:
+      official_url: https://www.cityscapes-dataset.com/downloads/
+      method: register, wait for account approval, accept terms, then download selected archives
+      availability: account_gated
+      expected_minimum: leftImg8bit plus gtFine for the first segmentation baseline
+    recommended_use:
+      phase: phase_1
+      role: drivable_area_and_semantic_baseline
+      recommendation: conditional_primary
+    limitations:
+      - concentrated in European cities and mostly fair-weather urban scenes
+      - non-commercial restriction blocks product/commercial training use
+    sources:
+      - type: official_overview
+        url: https://www.cityscapes-dataset.com/
+      - type: official_license
+        url: https://www.cityscapes-dataset.com/license/
+      - type: official_download
+        url: https://www.cityscapes-dataset.com/downloads/
+
   - id: bdd100k
-    purpose: drivable-area, lane and road-object multi-task baseline
-    license_review: required
-    status: candidate
+    display_name: BDD100K
+    version_scope: bdd100k_2020_multitask_release
+    status: researched_not_enabled
+    tasks:
+      - drivable_area_segmentation
+      - lane_detection
+      - object_detection
+      - semantic_segmentation
+      - instance_segmentation
+      - tracking
+    scale:
+      summary: 100000 videos of about 40 seconds, over 1000 driving hours and over 100 million frames
+      keyframes: 100000
+      detection_categories: 10
+      semantic_instance_images: 10000
+      semantic_classes: 40
+    labels:
+      summary: 10 road-object box classes, direct/alternative drivable areas, lane attributes and dense segmentation subsets
+      detection_categories:
+        - bike
+        - bus
+        - car
+        - motor
+        - person
+        - rider
+        - traffic light
+        - traffic sign
+        - train
+        - truck
+    license:
+      name: data terms not captured from an independently published official license page
+      review_status: data_terms_capture_required
+      commercial_use: unknown
+      redistribution: unknown
+      obligations:
+        - capture and archive the terms displayed by the official download portal
+        - do not treat the BSD-3-Clause toolkit license as the dataset license
+        - cite the BDD100K CVPR 2020 paper
+      note: The official toolkit repository is BSD-3-Clause, but its text explicitly describes source/binary software and is not sufficient evidence for data rights.
+    download:
+      official_url: https://bdd-data.berkeley.edu/
+      method: use the official portal and download only the task-specific image and annotation packages
+      availability: portal_available_terms_pending_capture
+      expected_minimum: 100K Images, Drivable Area labels and Detection 2020 Labels
+    recommended_use:
+      phase: phase_1
+      role: primary_multitask_real_road_baseline
+      recommendation: preferred_after_license_clearance
+    limitations:
+      - large storage footprint when video and all task packages are downloaded
+      - dataset rights remain blocked until portal terms are archived and approved
+    sources:
+      - type: official_dataset_portal
+        url: https://bdd-data.berkeley.edu/
+      - type: official_toolkit_readme
+        url: https://github.com/bdd100k/bdd100k
+      - type: official_label_format
+        url: https://github.com/bdd100k/bdd100k/blob/master/doc/format.md
+      - type: official_paper
+        url: https://openaccess.thecvf.com/content_CVPR_2020/html/Yu_BDD100K_A_Diverse_Driving_Dataset_for_Heterogeneous_Multitask_Learning_CVPR_2020_paper.html
+      - type: toolkit_license_not_data_license
+        url: https://github.com/bdd100k/bdd100k/blob/master/LICENSE
+
   - id: mapillary-vistas
-    purpose: cross-region semantic generalization evaluation
-    license_review: required
-    status: candidate
+    display_name: Mapillary Vistas
+    version_scope: v1.2_research_edition
+    status: researched_not_enabled
+    tasks:
+      - semantic_segmentation
+      - instance_segmentation
+      - cross_region_generalization
+    scale:
+      summary: 25000 high-resolution images from worldwide street scenes
+      train_images: 18000
+      validation_images: 2000
+      test_images: 5000
+      semantic_categories: 66
+      instance_categories: 37
+    labels:
+      summary: dense polygon semantic labels with instance-specific annotations for selected categories
+      category_scope: urban, countryside and off-road street scenes
+    license:
+      name: CC-BY-SA stated for the v1.2 image source in the official paper
+      review_status: version_terms_capture_required
+      commercial_use: conditional_unknown_for_dataset_package
+      redistribution: conditional_share_alike
+      obligations:
+        - attribute Mapillary imagery and dataset publication
+        - capture the exact license presented for the selected archive/version
+        - preserve share-alike requirements where applicable
+      note: Limit this record to v1.2; do not assume that v2.0 or other Mapillary research datasets use identical terms.
+    download:
+      official_url: https://www.mapillary.com/dataset/vistas
+      method: register with the official research dataset portal and accept the selected version terms
+      availability: account_and_version_terms_required
+      expected_minimum: training and validation images plus v1.2 labels
+    recommended_use:
+      phase: phase_1_or_2
+      role: cross_region_generalization_and_semantic_pretraining
+      recommendation: secondary_after_baseline
+    limitations:
+      - heterogeneous cameras and global scenes increase mapping and normalization work
+      - exact archive license must be captured before download
+    sources:
+      - type: official_paper
+        url: https://openaccess.thecvf.com/content_ICCV_2017/html/Neuhold_The_Mapillary_Vistas_ICCV_2017_paper.html
+      - type: official_imagery_license_help
+        url: https://help.mapillary.com/hc/en-us/articles/115001770409-CC-BY-SA-license-for-open-data
+      - type: official_dataset_portal
+        url: https://www.mapillary.com/dataset/vistas
+
   - id: lost-and-found
-    purpose: small road-obstacle detection and segmentation evaluation
-    license_review: required
-    status: candidate
+    display_name: Lost and Found
+    version_scope: official_train_and_test_release
+    status: enabled_local_noncommercial_validation
+    tasks:
+      - small_road_obstacle_segmentation
+      - free_space_segmentation
+      - stereo_depth_evaluation
+    scale:
+      summary: 112 stereo video sequences with 2104 annotated frames
+      annotated_frames: 2104
+      total_hosted_size_gb: 49.1
+      practical_minimum_size: about 6 GB left 8-bit images plus 37 MB labels
+    labels:
+      summary: pixel-level obstacle and free-space labels, stereo imagery, disparity, camera and vehicle metadata
+      category_scope: unexpected small lost-cargo-like road hazards
+    license:
+      name: LostAndFound Dataset License Agreement
+      review_status: verified_restrictive
+      commercial_use: prohibited
+      redistribution: prohibited
+      obligations:
+        - cite the Lost and Found publication or link the dataset website
+        - do not distribute original or modified data
+        - only share abstract derivatives that cannot reconstruct the dataset
+      note: Research-only candidate; commercial use and dataset redistribution are explicitly prohibited.
+    download:
+      official_url: https://huggingface.co/datasets/iis-esslingen/LostAndFoundDataset
+      method: download only leftImg8bit, gtCoarse and optional disparity/camera packages from the institute dataset card
+      availability: public_mirror_with_embedded_license
+      expected_minimum: leftImg8bit.zip and gtCoarse.zip
+    recommended_use:
+      phase: phase_2_or_3
+      role: real_small_road_obstacle_validation
+      recommendation: primary_noncommercial_obstacle_set
+    limitations:
+      - limited geography and capture setup
+      - adjacent frames require sequence-level splitting
+      - non-commercial and no-redistribution restrictions
+    sources:
+      - type: official_institute_dataset_card
+        url: https://huggingface.co/datasets/iis-esslingen/LostAndFoundDataset
+      - type: original_paper
+        url: https://arxiv.org/abs/1609.04653
+    local_enablement:
+      enabled_on: 2026-07-16
+      scope: local_noncommercial_visualization_and_validation
+      config: configs/data/task4_samples.yaml
+      license_snapshot: metadata/licenses/lost-and-found-2026-07-16.md
+
   - id: fishyscapes
-    purpose: pixel-level anomaly evaluation
-    license_review: required
-    status: candidate
+    display_name: Fishyscapes
+    version_scope: lost_and_found_validation_plus_server_benchmarks
+    status: researched_not_enabled
+    tasks:
+      - pixel_anomaly_segmentation
+      - open_world_evaluation
+    scale:
+      summary: 100-image public Lost and Found validation annotation package; full benchmark test sets remain server-side
+      public_validation_images: 100
+      public_annotation_archive_kb: 729.3
+    labels:
+      summary: dense anomaly masks layered on Lost and Found images; Static/Web variants evaluate synthetic or changing anomalies
+      category_scope: binary in-distribution versus anomaly evaluation
+    license:
+      name: CC-BY-4.0 for the public annotation archive, with upstream image restrictions
+      review_status: inherited_restrictions
+      commercial_use: prohibited_for_lost_and_found_based_images
+      redistribution: annotations_allowed_with_attribution_but_base_images_restricted
+      obligations:
+        - attribute Fishyscapes for masks and Lost and Found for images
+        - comply with the Lost and Found license for all underlying frames
+        - do not redistribute base images
+        - use the official server for hidden test sets
+      note: The 729.3 kB Zenodo package contains annotations, not independently licensed base imagery.
+    download:
+      official_url: https://fishyscapes.com/dataset
+      method: download the public validation masks from Zenodo and obtain matching images under the Lost and Found terms
+      availability: validation_public_test_server_only
+      expected_minimum: Fishyscapes Lost and Found validation annotations plus matching Lost and Found images
+    recommended_use:
+      phase: phase_3
+      role: anomaly_metric_and_threshold_validation
+      recommendation: evaluation_only
+    limitations:
+      - hidden benchmark data cannot be used for local training
+      - base image license is more restrictive than the annotation license
+    sources:
+      - type: official_dataset_page
+        url: https://fishyscapes.com/dataset
+      - type: official_validation_record
+        url: https://zenodo.org/records/6511227
+      - type: official_benchmark_page
+        url: https://fishyscapes.com/
+
   - id: road-anomaly-21
-    purpose: unknown road-object anomaly segmentation evaluation
-    license_review: required
-    status: candidate
+    display_name: RoadAnomaly21
+    version_scope: segment_me_if_you_can_anomaly_track
+    status: researched_not_enabled
+    tasks:
+      - full_scene_anomaly_segmentation
+    scale:
+      summary: 100 test images plus 10 public extra images with pixel-level labels
+      test_images: 100
+      extra_public_labeled_images: 10
+      archive_size_mb: 52.6
+    labels:
+      summary: three-way pixel labels for anomaly, not anomaly and void
+      category_scope: unusual animals, vehicles and objects that may appear anywhere in the scene
+    license:
+      name: Zenodo Other (Attribution) with per-image sources and licenses inside the archive
+      review_status: per_asset_review_required
+      commercial_use: unknown_per_asset
+      redistribution: varies_by_source
+      obligations:
+        - inspect and retain the archive source and license manifest
+        - attribute every source as required
+        - use only assets whose individual terms match the project purpose
+      note: The authors state that they do not own all source images; a single blanket license must not be inferred.
+    download:
+      official_url: https://zenodo.org/records/5270237
+      method: download the official AnomalyTrack archive and audit its source/license manifest before extraction into the project data area
+      availability: public_with_per_asset_license_review
+      expected_minimum: dataset_AnomalyTrack.zip
+    recommended_use:
+      phase: phase_3
+      role: cross_domain_unknown_anomaly_evaluation
+      recommendation: evaluation_only_after_asset_audit
+    limitations:
+      - web-sourced images create mixed licensing and domain variation
+      - test images must not leak into training or threshold fitting
+    sources:
+      - type: official_dataset_page
+        url: https://segmentmeifyoucan.com/datasets
+      - type: official_archive
+        url: https://zenodo.org/records/5270237
+      - type: official_paper
+        url: https://arxiv.org/abs/2104.14812
+
   - id: segment-me-if-you-can
-    purpose: anomaly segmentation and road-obstacle benchmarking
-    license_review: required
-    status: candidate
+    display_name: SegmentMeIfYouCan
+    version_scope: benchmark_suite_with_road_obstacle_21_focus
+    status: enabled_local_evaluation
+    tasks:
+      - road_obstacle_segmentation
+      - anomaly_segmentation
+      - component_level_evaluation
+    scale:
+      summary: RoadObstacle21 has 327 test images plus 30 public extra images; suite also includes RoadAnomaly21
+      road_obstacle_test_images: 327
+      road_obstacle_extra_public_labeled_images: 30
+      road_obstacle_archive_size_mb: 207.6
+    labels:
+      summary: three-way pixel labels for obstacle, not obstacle and void, with road as the region of interest
+      category_scope: stuffed toys, sleighs, tree stumps and other known or unknown objects on the road
+    license:
+      name: CC-BY-4.0 for the official RoadObstacle21 Zenodo package
+      review_status: verified_attribution_for_road_obstacle_package
+      commercial_use: allowed_with_attribution_for_road_obstacle_package
+      redistribution: allowed_with_attribution_for_road_obstacle_package
+      obligations:
+        - cite and attribute the SegmentMeIfYouCan dataset and authors
+        - keep RoadAnomaly21 governed by its separate per-asset license review
+        - do not treat hidden benchmark labels as downloadable training data
+      note: This suite entry focuses on RoadObstacle21; RoadAnomaly21 is separately registered to prevent double counting.
+    download:
+      official_url: https://zenodo.org/records/5281633
+      method: download the official ObstacleTrack archive; use the benchmark site for task definitions and evaluation
+      availability: public_images_and_validation_labels
+      expected_minimum: dataset_ObstacleTrack.zip
+    recommended_use:
+      phase: phase_3
+      role: road_obstacle_component_and_pixel_evaluation
+      recommendation: preferred_evaluation_suite
+    limitations:
+      - primarily an evaluation suite rather than a training corpus
+      - avoid duplicate download of RoadAnomaly21 through the suite
+    sources:
+      - type: official_dataset_page
+        url: https://segmentmeifyoucan.com/datasets
+      - type: official_road_obstacle_archive
+        url: https://zenodo.org/records/5281633
+      - type: official_paper
+        url: https://arxiv.org/abs/2104.14812
+    local_enablement:
+      enabled_on: 2026-07-16
+      scope: road_obstacle_21_visualization_and_evaluation_only
+      config: configs/data/task4_samples.yaml
+      license_snapshot: metadata/licenses/road-obstacle-21-2026-07-16.md

@@ -1,1 +1,1 @@
-"""Dataset indexing, loading, conversion and validation."""
+"""数据集索引、加载、格式转换与数据质量校验模块。"""

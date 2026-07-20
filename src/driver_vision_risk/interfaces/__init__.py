@@ -1,1 +1,1 @@
-"""Image, ego-state, obstacle, risk and runtime-log interfaces."""
+"""图像、自车状态、障碍物、风险结果和运行日志的接口定义。"""

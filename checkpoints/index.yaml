@@ -1,2 +1,24 @@
 schema_version: 1
-models: []
+models:
+  - id: segformer-b0-cityscapes
+    task: semantic_segmentation
+    role: drivable_area_demo_baseline
+    architecture: SegformerForSemanticSegmentation
+    source:
+      repository: https://huggingface.co/nvidia/segformer-b0-finetuned-cityscapes-1024-1024
+      revision: 21b3847fae21ddee674abd31129307b6a1235bd9
+    local_directory: checkpoints/segformer-b0-cityscapes
+    weights:
+      filename: pytorch_model.bin
+      size_bytes: 14957601
+      sha256: 027ed78d8ff9c535df5a66361c92b9673cca3cb923cbeb8c5802385b6b93194c
+    framework: pytorch
+    dataset: Cityscapes
+    road_class:
+      id: 0
+      name: road
+    license:
+      name: NVIDIA Source Code License for SegFormer
+      scope: noncommercial_research_and_evaluation_only
+      snapshot: metadata/licenses/segformer-b0-cityscapes-2026-07-16.md
+    status: verified_local_ready

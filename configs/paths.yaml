@@ -15,5 +15,9 @@ models:
   checkpoints: checkpoints
   checkpoint_index: checkpoints/index.yaml
 
+experiments:
+  configs: configs/experiments
+  data_splits: data/indexes
+
 runtime:
   outputs: outputs

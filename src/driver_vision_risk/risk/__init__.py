@@ -1,1 +1,1 @@
-"""Driving-corridor conflict analysis and configurable risk state machine."""
+"""行驶走廊冲突分析及可配置风险状态机。"""

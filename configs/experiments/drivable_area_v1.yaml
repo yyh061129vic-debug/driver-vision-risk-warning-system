@@ -1,0 +1,117 @@
+schema_version: 1
+
+experiment:
+  id: phase1_drivable_area_v1
+  version: 1.0.0
+  status: frozen
+  frozen_on: 2026-07-16
+  task: drivable_area_segmentation
+  mode: inference_only_no_local_training
+  purpose: 第一版可行驶区域基线的可复现本地评测方案
+  change_control: 冻结后不得原地修改关键因素；数据、模型、输入或指标变化必须新建版本。
+
+references:
+  split_manifest: data/indexes/drivable_area_v1_split.yaml
+  model_config: configs/models/segformer_cityscapes_cpu.yaml
+  checkpoint_index: checkpoints/index.yaml
+  report: docs/experiment-plan-v1.md
+
+randomness:
+  seed: 20260716
+  shuffle: false
+  dataloader_workers: 0
+  deterministic_inference: true
+
+model:
+  id: segformer-b0-cityscapes
+  architecture: SegformerForSemanticSegmentation
+  repository: nvidia/segformer-b0-finetuned-cityscapes-1024-1024
+  revision: 21b3847fae21ddee674abd31129307b6a1235bd9
+  weights_sha256: 027ed78d8ff9c535df5a66361c92b9673cca3cb923cbeb8c5802385b6b93194c
+  local_training: false
+  parameters_frozen: true
+
+input:
+  color_space: RGB
+  dtype: uint8
+  batch_size: 1
+  model_height: 512
+  model_width: 512
+  resize_policy: force_exact_size
+  preserve_aspect_ratio: false
+  interpolation: bilinear
+  normalization:
+    scale_to_unit_interval: true
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
+
+inference:
+  road_class_ids: [0]
+  road_class_names: [road]
+  decision_rule: semantic_argmax
+  confidence_threshold: null
+  logits_upsampling:
+    target: original_input_resolution
+    interpolation: bilinear
+    align_corners: false
+  evaluation_resolution: original_input_resolution
+  void_pixels_ignored: true
+
+metrics:
+  aggregation:
+    primary: per_dataset_confusion_accumulation
+    cross_dataset: report_separately_no_headline_pooling
+  primary:
+    - id: binary_miou
+      display_name: Binary mIoU
+      definition: 道路类别IoU与非道路类别IoU的算术平均，忽略void像素。
+      unit: percent
+    - id: road_iou
+      display_name: Road IoU
+      definition: 道路预测与道路真值交集除以并集，忽略void像素。
+      unit: percent
+    - id: boundary_fscore
+      display_name: Boundary F-score
+      definition: 预测道路边界与真值道路边界在原图分辨率下的对称F1。
+      unit: percent
+      tolerance_pixels: 3
+      boundary_connectivity: 4
+  diagnostics:
+    - road_precision
+    - road_recall
+    - road_dice
+    - road_coverage
+    - mean_road_confidence
+  performance:
+    - latency_mean_ms
+    - latency_p95_ms
+    - throughput_fps
+  performance_protocol:
+    hardware_role: local_cpu_baseline
+    device: cpu
+    dtype: float32
+    warmup_frames: 5
+    timed_partition: holdout_evaluation
+    passes: 1
+    timing_scope: processor_through_class_map
+    excluded: [model_load, file_read, visualization, file_write]
+
+reporting:
+  required_groups:
+    - lost-and-found
+    - road-obstacle-21
+  required_failure_categories:
+    - obstacle_predicted_as_road
+    - road_predicted_as_nonroad
+    - boundary_deviation
+    - domain_or_image_quality_shift
+  unavailable_strata:
+    - distance
+    - weather
+    - time_of_day
+  unavailable_strata_policy: 当前公开样例缺少可靠字段时记录unknown，不从图像主观猜测。
+
+acceptance_thresholds:
+  status: pending_product_and_target_hardware_confirmation
+  values: null
+  note: 本版本冻结指标和计算口径，不编造需求文档尚未给出的数值门槛。
