@@ -1,0 +1,64 @@
+schema_version: 1
+
+# 1024 输入与异常分数实验配置；V1 冻结 CPU 对照配置保持不变。
+model:
+  id: segformer-b0-cityscapes
+  architecture: SegformerForSemanticSegmentation
+  repository: nvidia/segformer-b0-finetuned-cityscapes-1024-1024
+  revision: 21b3847fae21ddee674abd31129307b6a1235bd9
+  local_directory: checkpoints/segformer-b0-cityscapes
+  weights_file: pytorch_model.bin
+  weights_size_bytes: 14957601
+  weights_sha256: 027ed78d8ff9c535df5a66361c92b9673cca3cb923cbeb8c5802385b6b93194c
+  license: NVIDIA Source Code License for SegFormer
+  license_scope: noncommercial_research_and_evaluation_only
+  license_snapshot: metadata/licenses/segformer-b0-cityscapes-2026-07-16.md
+
+runtime:
+  framework: pytorch
+  device: cuda
+  dtype: float32
+  torch_threads: 12
+  input_size:
+    height: 1024
+    width: 1024
+
+segmentation:
+  road_class_ids: [0]
+  road_class_names: [road]
+  confidence_threshold: null
+  note: 道路掩码仍使用语义 argmax，异常分数只用于道路内部风险候选提取。
+
+anomaly:
+  score_method: energy
+  # -1.0 来自本地标注样例首轮能量分布检查，仅作为工程实验起点，不是产品验收阈值。
+  threshold: -1.0
+  threshold_status: experimental_uncalibrated
+  minimum_area_pixels: 256
+  connectivity: 8
+  # 腐蚀 5 个原图像素，排除紧贴预测道路边界的路沿与背景响应。
+  road_mask_erosion_pixels: 5
+  # argmax 类别交界线向外膨胀 8 个原图像素，并从异常候选掩码中排除。
+  class_boundary_suppression_pixels: 8
+  heatmap_percentile_low: 2.0
+  heatmap_percentile_high: 98.0
+
+visualization:
+  road_color_rgb: [16, 185, 129]
+  boundary_color_rgb: [255, 255, 255]
+  overlay_alpha: 0.55
+  boundary_width: 2
+
+video:
+  output_codec: mp4v
+  preserve_input_fps: true
+
+output:
+  root: outputs/task5_segmentation_anomaly
+  save_mask: true
+  save_boundary: true
+  save_confidence: true
+  save_anomaly_raw_heatmap: true
+  save_anomaly_heatmap: true
+  save_overlay: true
+  save_metadata: true

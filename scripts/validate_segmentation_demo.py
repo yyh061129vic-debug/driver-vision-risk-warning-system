@@ -14,7 +14,7 @@ from PIL import Image, ImageChops
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONFIG_PATH = ROOT / "configs/models/segformer_cityscapes.yaml"
+DEFAULT_CONFIG = ROOT / "configs/models/segformer_cityscapes.yaml"
 CHECKPOINT_INDEX = ROOT / "checkpoints/index.yaml"
 DEFAULT_OUTPUT = ROOT / "outputs/task5_segmentation_demo/gpu"
 
@@ -100,7 +100,7 @@ def _validate_image_output(
     result: dict[str, object],
     errors: list[str],
 ) -> None:
-    """检查单图模式四类输出的哈希、尺寸、像素内容及叠加有效性。"""
+    """检查单图模式六类输出的哈希、尺寸、像素内容及叠加有效性。"""
 
     outputs = result.get("outputs")
     if not isinstance(outputs, dict):
@@ -108,7 +108,14 @@ def _validate_image_output(
         return
     images: dict[str, Image.Image] = {}
     # 每类产物都必须存在且与 result.json 中记录的哈希一致。
-    for key in ("mask", "boundary", "confidence", "overlay"):
+    for key in (
+        "mask",
+        "boundary",
+        "confidence",
+        "anomaly_raw_heatmap",
+        "anomaly_heatmap",
+        "overlay",
+    ):
         filename = outputs.get(key)
         path = output_directory / str(filename)
         if not filename or not path.is_file():
@@ -121,7 +128,7 @@ def _validate_image_output(
             images[key] = Image.open(path).copy()
         except OSError as exc:
             errors.append(f"cannot open task-5 {key}: {exc}")
-    if len(images) != 4:
+    if len(images) != 6:
         return
     dimensions = {image.size for image in images.values()}
     if len(dimensions) != 1:
@@ -130,12 +137,24 @@ def _validate_image_output(
     mask = np.asarray(images["mask"])
     boundary = np.asarray(images["boundary"])
     confidence = np.asarray(images["confidence"])
+    anomaly_raw_heatmap = np.asarray(images["anomaly_raw_heatmap"])
+    anomaly_heatmap = np.asarray(images["anomaly_heatmap"])
     if not set(np.unique(mask)).issubset({0, 255}) or mask.max() == 0:
         errors.append("drivable mask must be a non-empty binary image")
     if not set(np.unique(boundary)).issubset({0, 255}) or boundary.max() == 0:
         errors.append("drivable boundary must be a non-empty binary image")
     if confidence.max() <= confidence.min():
         errors.append("road confidence image must contain a non-constant score field")
+    if anomaly_raw_heatmap.max() <= anomaly_raw_heatmap.min():
+        errors.append("raw anomaly heatmap must contain a non-constant score field")
+    if anomaly_heatmap.max() <= anomaly_heatmap.min():
+        errors.append("anomaly heatmap must contain a non-constant score field")
+
+    anomaly_detection = result.get("anomaly_detection")
+    if not isinstance(anomaly_detection, dict):
+        errors.append("result must contain anomaly_detection metadata")
+    elif anomaly_detection.get("score_direction") != "higher_is_more_suspicious":
+        errors.append("anomaly score direction must be higher_is_more_suspicious")
 
     # 原图仍在本地时，确认叠加图确实发生像素变化。
     input_path = ROOT / result["input"]["path"]
@@ -146,12 +165,16 @@ def _validate_image_output(
             errors.append("overlay must differ from the source image")
 
 
-def validate(output_directory: Path, metadata_only: bool = False) -> list[str]:
+def validate(
+    output_directory: Path,
+    metadata_only: bool = False,
+    config_path: Path = DEFAULT_CONFIG,
+) -> list[str]:
     """执行任务 5 分层校验；元数据模式不要求本地权重和运行产物。"""
 
     errors: list[str] = []
     try:
-        config = yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8"))
+        config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     except (OSError, yaml.YAMLError) as exc:
         return [f"cannot read segmentation configuration: {exc}"]
     if not isinstance(config, dict):
@@ -195,9 +218,14 @@ def main() -> int:
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--metadata-only", action="store_true")
     args = parser.parse_args()
-    errors = validate(args.output.resolve(), metadata_only=args.metadata_only)
+    errors = validate(
+        args.output.resolve(),
+        metadata_only=args.metadata_only,
+        config_path=args.config.resolve(),
+    )
     if errors:
         print("Task-5 segmentation validation failed:", file=sys.stderr)
         for error in errors:

@@ -68,6 +68,40 @@ python scripts/validate_segmentation_demo.py
 driver-vision-risk segment --input <图像或视频路径> --output <输出目录>
 ```
 
+## 1024 输入与未知异常候选
+
+`configs/models/segformer_cityscapes_anomaly.yaml` 是独立的异常检测实验配置，不修改冻结的
+`segformer_cityscapes_cpu.yaml`。它把模型预处理输入提升到 1024×1024，并默认使用能量分数；
+把 `anomaly.score_method` 改为 `msp` 即可切换到 `1 - MSP`。
+
+```powershell
+python scripts/run_segmentation_demo.py `
+  --input "data_raw/segment-me-if-you-can/road-obstacle-21/extracted/dataset_ObstacleTrack/images/validation_34.webp" `
+  --output "outputs/task5_segmentation_anomaly/validation_34" `
+  --config "configs/models/segformer_cityscapes_anomaly.yaml"
+```
+
+单图输出新增 `anomaly-heatmap.png`。`result.json` 的
+`anomaly_detection.regions` 是风险状态机接口：每个元素包含右下角开区间的
+`bbox_xyxy`、`area_pixels` 和 `mean_anomaly_score`。候选像素必须同时满足“模型预测为道路”
+和“异常分数高于阈值”，随后经过连通域和最小面积过滤。
+
+候选提取前还会按 `anomaly.road_mask_erosion_pixels` 腐蚀预测道路掩码。当前实验值为
+5 个原图像素，用于排除紧贴道路边界的路沿响应；路外植被、围栏和天空即使热力图为红色，
+也不会进入 `anomaly_detection.regions`。全图热力图仅供分析能量分布，不代表全图都参与风险判定。
+
+模型在 argmax 类别交界处天然犹豫，因此程序还会检测完整类别图的交界线，按
+`anomaly.class_boundary_suppression_pixels` 膨胀后从候选掩码排除。当前实验半径为 8 个
+原图像素。实现采用布尔掩码排除，而不是把 Energy 数值写成零；因为当前能量阈值为负数，
+数值零反而会被解释为更可疑。
+
+输出同时保留 `anomaly-raw-heatmap.png` 和 `anomaly-heatmap.png`：前者展示未经抑制的
+全图能量，供模型诊断；后者把路外区域及膨胀后的类别边界带显示为黑色，只展示真正参与
+风险候选提取的分数。风险状态机只读取后者对应的规则和 `regions`。
+
+当前能量阈值 `-1.0` 与最小面积 `256` 仅为本地样例首轮工程值，状态为
+`experimental_uncalibrated`，不能当作产品安全阈值或验收门槛。
+
 ## 5. 已知边界
 
 - 模型只在 Cityscapes 上做过微调，RoadObstacle21、乡村道路、极端天气和夜间图像存在域偏移。

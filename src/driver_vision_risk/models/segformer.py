@@ -18,19 +18,20 @@ class DrivableAreaPrediction:
     mask: np.ndarray
     boundary: np.ndarray
     confidence: np.ndarray
+    anomaly: np.ndarray
     class_map: np.ndarray
     latency_ms: float
     device: str
 
 
-def binary_inner_boundary(mask: np.ndarray, width: int = 1) -> np.ndarray:
-    """计算二值掩码的内边界，不依赖 OpenCV 或 SciPy。"""
+def binary_erode(mask: np.ndarray, width: int = 1) -> np.ndarray:
+    """使用四邻域把二值掩码向内腐蚀指定像素，不依赖 OpenCV 或 SciPy。"""
 
     if mask.ndim != 2 or mask.dtype != np.bool_:
         raise ValueError("mask must be a two-dimensional boolean array")
-    if width < 1:
-        raise ValueError("boundary width must be at least one pixel")
-    # 每轮使用四邻域腐蚀一圈，再用原掩码减去腐蚀结果得到内边界。
+    if width < 0:
+        raise ValueError("erosion width must not be negative")
+    # 每轮使用四邻域向内收缩一圈；零像素时返回独立副本。
     eroded = mask.copy()
     for _ in range(width):
         padded = np.pad(eroded, 1, mode="constant", constant_values=False)
@@ -41,7 +42,40 @@ def binary_inner_boundary(mask: np.ndarray, width: int = 1) -> np.ndarray:
             & padded[1:-1, :-2]
             & padded[1:-1, 2:]
         )
-    return mask & ~eroded
+    return eroded
+
+
+def binary_dilate(mask: np.ndarray, width: int = 1) -> np.ndarray:
+    """使用八邻域把二值掩码向外膨胀指定像素，不依赖 OpenCV 或 SciPy。"""
+
+    if mask.ndim != 2 or mask.dtype != np.bool_:
+        raise ValueError("mask must be a two-dimensional boolean array")
+    if width < 0:
+        raise ValueError("dilation width must not be negative")
+    dilated = mask.copy()
+    for _ in range(width):
+        padded = np.pad(dilated, 1, mode="constant", constant_values=False)
+        # 八邻域生成完整边界带，避免仅沿水平或垂直方向留下对角缝隙。
+        dilated = (
+            padded[:-2, :-2]
+            | padded[:-2, 1:-1]
+            | padded[:-2, 2:]
+            | padded[1:-1, :-2]
+            | padded[1:-1, 1:-1]
+            | padded[1:-1, 2:]
+            | padded[2:, :-2]
+            | padded[2:, 1:-1]
+            | padded[2:, 2:]
+        )
+    return dilated
+
+
+def binary_inner_boundary(mask: np.ndarray, width: int = 1) -> np.ndarray:
+    """计算二值掩码的内边界，不依赖 OpenCV 或 SciPy。"""
+
+    if width < 1:
+        raise ValueError("boundary width must be at least one pixel")
+    return mask & ~binary_erode(mask, width)
 
 
 class SegformerDrivableAreaSegmenter:
@@ -81,6 +115,25 @@ class SegformerDrivableAreaSegmenter:
         if self.device.type == "cpu":
             torch.set_num_threads(int(runtime_config.get("torch_threads", 1)))
 
+        # 新配置可覆盖权重自带的预处理尺寸；旧配置继续使用 checkpoint 默认值。
+        input_size = runtime_config.get("input_size")
+        if input_size is None:
+            self.input_size: dict[str, int] | None = None
+        elif isinstance(input_size, dict):
+            height = int(input_size.get("height", 0))
+            width = int(input_size.get("width", 0))
+            if height < 1 or width < 1:
+                raise ValueError("runtime.input_size height and width must be positive integers")
+            self.input_size = {"height": height, "width": width}
+        else:
+            raise ValueError("runtime.input_size must be a mapping with height and width")
+
+        # 异常分数支持 MSP 与能量分数切换；旧配置默认使用最简单的 MSP。
+        anomaly_config = self.config.get("anomaly", {})
+        self.anomaly_score_method = str(anomaly_config.get("score_method", "msp")).lower()
+        if self.anomaly_score_method not in {"msp", "energy"}:
+            raise ValueError("anomaly.score_method must be either msp or energy")
+
         self.processor = AutoImageProcessor.from_pretrained(
             self.model_directory,
             local_files_only=True,
@@ -114,7 +167,10 @@ class SegformerDrivableAreaSegmenter:
         if self.device.type == "cuda":
             torch.cuda.synchronize(self.device)
         started = time.perf_counter()
-        inputs = self.processor(images=rgb_image, return_tensors="pt")
+        processor_arguments = {"images": rgb_image, "return_tensors": "pt"}
+        if self.input_size is not None:
+            processor_arguments["size"] = self.input_size
+        inputs = self.processor(**processor_arguments)
         inputs = {name: value.to(self.device) for name, value in inputs.items()}
         with torch.inference_mode():
             outputs = self.model(**inputs)
@@ -128,6 +184,11 @@ class SegformerDrivableAreaSegmenter:
             probabilities = torch.softmax(logits, dim=1)
             class_map_tensor = logits.argmax(dim=1)[0]
             road_probabilities = probabilities[0, list(self.road_class_ids)].amax(dim=0)
+            # MSP 范围为 0 到 1；能量分数无固定范围，两者均为数值越高越可疑。
+            if self.anomaly_score_method == "msp":
+                anomaly_tensor = 1.0 - probabilities.amax(dim=1)[0]
+            else:
+                anomaly_tensor = -torch.logsumexp(logits, dim=1)[0]
             # 使用配置中的道路类别集合构造二值掩码，便于以后扩展多个可行驶类。
             road_mask = torch.zeros_like(class_map_tensor, dtype=torch.bool)
             for class_id in self.road_class_ids:
@@ -142,12 +203,14 @@ class SegformerDrivableAreaSegmenter:
         # 输出统一转成 NumPy，供图像和视频入口复用，不泄漏框架张量。
         mask = road_mask.cpu().numpy().astype(np.bool_)
         confidence = road_probabilities.cpu().numpy().astype(np.float32)
+        anomaly = anomaly_tensor.cpu().numpy().astype(np.float32)
         class_map = class_map_tensor.cpu().numpy().astype(np.uint8)
         boundary = binary_inner_boundary(mask, width=self.boundary_width)
         return DrivableAreaPrediction(
             mask=mask,
             boundary=boundary,
             confidence=confidence,
+            anomaly=anomaly,
             class_map=class_map,
             latency_ms=latency_ms,
             device=str(self.device),
