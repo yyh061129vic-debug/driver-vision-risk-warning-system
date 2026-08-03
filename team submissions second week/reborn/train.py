@@ -1,58 +1,48 @@
 import os
-
 import torch
 
 from torch.utils.data import DataLoader
-
 from transformers import SegformerForSemanticSegmentation
+from tqdm import tqdm
 
 from dataset import RoadDataset
-
 from loss import RoadLoss
 
 
+# ======================
+# 参数
+# ======================
 
 DEVICE = "cuda"
 
-
 EPOCHS = 30
-
 BATCH_SIZE = 4
-
 LR = 5e-5
 
 
-
 TRAIN_IMG = "./data/train/images"
-
 TRAIN_MASK = "./data/train/masks"
 
 VAL_IMG = "./data/val/images"
-
 VAL_MASK = "./data/val/masks"
 
 
-
 MODEL_DIR = "./models/segformer-b0"
-
 
 
 # ======================
 # 数据
 # ======================
 
-
 train_dataset = RoadDataset(
     TRAIN_IMG,
     TRAIN_MASK
 )
 
-
 val_dataset = RoadDataset(
     VAL_IMG,
     VAL_MASK
 )
-
 
 
 train_loader = DataLoader(
@@ -66,7 +56,8 @@ train_loader = DataLoader(
 val_loader = DataLoader(
     val_dataset,
     batch_size=1,
-    shuffle=False
+    shuffle=False,
+    num_workers=2
 )
 
 
@@ -74,7 +65,6 @@ val_loader = DataLoader(
 # ======================
 # 模型
 # ======================
-
 
 model = SegformerForSemanticSegmentation.from_pretrained(
     MODEL_DIR,
@@ -86,16 +76,13 @@ model = SegformerForSemanticSegmentation.from_pretrained(
 model.to(DEVICE)
 
 
-
 criterion = RoadLoss()
-
 
 
 optimizer = torch.optim.AdamW(
     model.parameters(),
     lr=LR
 )
-
 
 
 best_iou = 0
@@ -109,9 +96,7 @@ best_iou = 0
 def calc_iou(pred, mask):
 
     pred = pred == 1
-
     mask = mask == 1
-
 
     inter = (
         pred & mask
@@ -132,42 +117,36 @@ def calc_iou(pred, mask):
 
 
 # ======================
-# train
+# Train
 # ======================
-
 
 for epoch in range(EPOCHS):
 
-
     model.train()
-
 
     total_loss = 0
 
 
-
-    for images, masks in train_loader:
-
-
-        images = images.to(
-            DEVICE
-        )
+    loop = tqdm(
+        train_loader,
+        desc=f"Epoch {epoch+1}/{EPOCHS}"
+    )
 
 
-        masks = masks.to(
-            DEVICE
-        )
+    for images, masks in loop:
 
+
+        images = images.to(DEVICE)
+
+        masks = masks.to(DEVICE)
 
 
         optimizer.zero_grad()
 
 
-
         outputs = model(
             pixel_values=images
         )
-
 
 
         logits = torch.nn.functional.interpolate(
@@ -178,37 +157,34 @@ for epoch in range(EPOCHS):
         )
 
 
-
         loss = criterion(
             logits,
             masks
         )
 
 
-
         loss.backward()
-
 
 
         optimizer.step()
 
 
-
         total_loss += loss.item()
 
 
+        loop.set_postfix(
+            loss=round(loss.item(),4)
+        )
 
-    train_loss = (
-        total_loss /
-        len(train_loader)
-    )
+
+
+    train_loss = total_loss / len(train_loader)
 
 
 
     # ======================
-    # validation
+    # Validation
     # ======================
-
 
     model.eval()
 
@@ -216,30 +192,26 @@ for epoch in range(EPOCHS):
     total_iou = 0
 
 
-
     with torch.no_grad():
 
 
-        for images,masks in val_loader:
+        for images, masks in tqdm(
+            val_loader,
+            desc="Validation"
+        ):
 
 
-            images = images.to(
-                DEVICE
-            )
+            images = images.to(DEVICE)
+
+            masks = masks.to(DEVICE)
 
 
-            masks = masks.to(
-                DEVICE
-            )
-
-
-            outputs=model(
+            outputs = model(
                 pixel_values=images
             )
 
 
-
-            logits=torch.nn.functional.interpolate(
+            logits = torch.nn.functional.interpolate(
                 outputs.logits,
                 size=masks.shape[-2:],
                 mode="bilinear",
@@ -247,8 +219,7 @@ for epoch in range(EPOCHS):
             )
 
 
-
-            pred=torch.argmax(
+            pred = torch.argmax(
                 logits,
                 dim=1
             )
@@ -261,15 +232,12 @@ for epoch in range(EPOCHS):
 
 
 
-    val_iou = (
-        total_iou /
-        len(val_loader)
-    )
+    val_iou = total_iou / len(val_loader)
 
 
 
     print(
-        f"Epoch {epoch+1}/{EPOCHS}",
+        f"\nEpoch {epoch+1}/{EPOCHS}",
         "loss:",
         round(train_loss,4),
         "IoU:",
@@ -280,7 +248,6 @@ for epoch in range(EPOCHS):
 
     if val_iou > best_iou:
 
-
         best_iou = val_iou
 
 
@@ -290,9 +257,7 @@ for epoch in range(EPOCHS):
         )
 
 
-        print(
-            "保存最佳模型"
-        )
+        print("保存最佳模型")
 
 
 

@@ -17,13 +17,16 @@ class RoadDataset(Dataset):
         self,
         image_dir,
         mask_dir,
-        size=(288,512)
+        size=(288,512),
+        augment=True
     ):
 
         self.image_dir = image_dir
         self.mask_dir = mask_dir
 
         self.size = size
+
+        self.augment = augment
 
 
         self.images = sorted(
@@ -35,6 +38,7 @@ class RoadDataset(Dataset):
         )
 
 
+        # 图片基础处理
         self.image_transform = transforms.Compose(
             [
 
@@ -43,6 +47,15 @@ class RoadDataset(Dataset):
                 ),
 
                 transforms.ToTensor(),
+
+
+                # 模拟车辆遮挡
+                transforms.RandomErasing(
+                    p=0.3,
+                    scale=(0.02,0.15),
+                    ratio=(0.3,3.3)
+                ),
+
 
                 transforms.Normalize(
                     mean=[
@@ -62,10 +75,18 @@ class RoadDataset(Dataset):
         )
 
 
-
+        # mask必须最近邻插值
         self.mask_transform = transforms.Resize(
             size,
             interpolation=Image.NEAREST
+        )
+
+
+        # 颜色增强
+        self.color_aug = transforms.ColorJitter(
+            brightness=0.3,
+            contrast=0.3,
+            saturation=0.3
         )
 
 
@@ -82,9 +103,9 @@ class RoadDataset(Dataset):
         img_name = self.images[idx]
 
 
-        # -----------------------
+        # =====================
         # image
-        # -----------------------
+        # =====================
 
         img_path=os.path.join(
             self.image_dir,
@@ -99,15 +120,9 @@ class RoadDataset(Dataset):
         )
 
 
-        image=self.image_transform(
-            image
-        )
-
-
-
-        # -----------------------
+        # =====================
         # mask
-        # -----------------------
+        # =====================
 
         base=os.path.splitext(
             img_name
@@ -130,9 +145,43 @@ class RoadDataset(Dataset):
             )
 
 
-
         mask=Image.open(
             mask_path
+        )
+
+
+        # =====================
+        # 同步增强
+        # =====================
+
+        if self.augment:
+
+
+            # 左右翻转
+            if np.random.rand() < 0.5:
+
+                image=image.transpose(
+                    Image.FLIP_LEFT_RIGHT
+                )
+
+                mask=mask.transpose(
+                    Image.FLIP_LEFT_RIGHT
+                )
+
+
+            # 光照变化
+            image=self.color_aug(
+                image
+            )
+
+
+
+        # =====================
+        # resize
+        # =====================
+
+        image=self.image_transform(
+            image
         )
 
 
@@ -146,14 +195,14 @@ class RoadDataset(Dataset):
         )
 
 
-
-        # -----------------------
+        # =====================
         # 类别处理
-        # -----------------------
+        # =====================
 
-        # drivable_id:
-        # 0 背景
-        # 1 道路
+        # BDD drivable:
+        # 0 background
+        # >0 road
+
 
         mask=(mask>0).astype(
             np.int64
@@ -164,7 +213,6 @@ class RoadDataset(Dataset):
             mask,
             dtype=torch.long
         )
-
 
 
         return image,mask
