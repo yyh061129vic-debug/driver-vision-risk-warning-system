@@ -12,3 +12,5 @@
 *.engine binary
 *.ckpt binary
 *.safetensors binary
+team[[:space:]]3[[:space:]]sub/林展毅_road_segformer_b2_bdd_best.pt filter=lfs diff=lfs merge=lfs -text
+team[[:space:]]3[[:space:]]sub/林展毅_lane_segformer_b0_bdd_best.pt filter=lfs diff=lfs merge=lfs -text
