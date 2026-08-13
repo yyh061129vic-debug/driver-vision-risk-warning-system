@@ -22,3 +22,33 @@ models:
       scope: noncommercial_research_and_evaluation_only
       snapshot: metadata/licenses/segformer-b0-cityscapes-2026-07-16.md
     status: verified_local_ready
+  - id: pidnet-s-cityscapes-onnx-float
+    task: semantic_segmentation
+    role: drivable_area_demo_realtime_branch
+    architecture: PIDNet-S
+    source:
+      repository: https://huggingface.co/qualcomm/PidNet
+      revision: v0.59.0
+      asset_url: https://qaihub-public-assets.s3.us-west-2.amazonaws.com/qai-hub-models/models/pidnet/releases/v0.59.0/pidnet-onnx-float.zip
+    local_directory: checkpoints/pidnet-s-cityscapes-onnx-float
+    weights:
+      filename: pidnet.onnx
+      size_bytes: 86841
+      sha256: cd4a464c2a4426bf52fcff8e53949db001b8d4c0939aa2086ae7e4ce9841783d
+      external_data_file: pidnet.data
+      external_data_size_bytes: 30481792
+      external_data_sha256: 60ab70116f6e673a733970bc23cfe7d09cb5f017b4acb41e27c7e6c45b2a9572
+      metadata_file: metadata.json
+      metadata_sha256: b9ccb3abb867e0a74827336fea5169f6f59b1f74ab194c1f5446089395b3e7b9
+      labels_file: labels.txt
+      labels_sha256: 48cab81b30ea4ee4f3b07ee136cb7e52c71de093d7bf834211ce29269ddfb196
+    framework: onnxruntime
+    dataset: Cityscapes
+    road_class:
+      id: 0
+      name: road
+    license:
+      name: MIT source implementation with Qualcomm AI Hub exported asset notice
+      scope: local_research_and_evaluation_only_pending_asset_terms_review
+      snapshot: metadata/licenses/pidnet-s-cityscapes-2026-08-10.md
+    status: verified_metadata_ready

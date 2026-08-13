@@ -18,13 +18,14 @@
 ├─ outputs/                # 日志、预测、可视化和报告；产物不进入 Git
 ├─ scripts/                # 下载、转换、校验、评估和仿真辅助脚本
 ├─ tests/                  # 单元与工程结构测试
-├─ team_submissions/       # 组员个人提交区与协作模板
+├─ team_submissions first week/   # 第一周组员提交区与协作模板
+├─ team submissions second week/  # 第二周组员提交与实验材料
 └─ docs/                   # 架构、接口和开发说明
 ```
 
 代码、配置、数据索引、权重和运行输出分别由 `src/`、`configs/`、`data/indexes/`、`checkpoints/` 和 `outputs/` 管理。原始数据与处理数据分别位于 `data_raw/` 和 `data_processed/`。数据本体、模型权重和运行产物均通过各目录的忽略规则排除，仅提交索引、元数据与说明。
 
-组员协作采用 `team_submissions/<GitHub用户名>/` 独立目录和个人分支；详细约定见 `team_submissions/README.md`。目录不能代替 GitHub 权限，没有写权限的组员应通过 Fork 和 Pull Request 提交。
+当前仓库保留了按周组织的组员提交区：第一周说明见 `team_submissions first week/README.md`，第二周材料集中在 `team submissions second week/`。历史文档中的 `team_submissions/<GitHub用户名>/` 仍可视为协作模板语义，但仓库校验已按当前真实目录结构兼容。
 
 ## 快速验证
 
@@ -60,6 +61,19 @@ python scripts/validate_segmentation_demo.py
 
 如需复现任务 6 冻结时的 CPU 对照，运行 Demo 时额外传入 `--config configs/models/segformer_cityscapes_cpu.yaml`；不要覆盖冻结的 CPU 实验记录。
 
+## 主流程模型切换
+
+主流程命令 `driver-vision-risk segment` 现在已经同时接入 `SegFormer` 和 `PIDNet-S`。默认模型仍然是 `SegFormer`，这样可以保持原有基线行为不变；当需要更偏实时的视频道路分割时，可以直接切到 `PIDNet-S`。
+
+```powershell
+driver-vision-risk segment --input <图像或视频路径> --output outputs/task5_segmentation_demo/default
+driver-vision-risk segment --model pidnet --input <图像或视频路径> --output outputs/task5_pidnet_demo/mainflow
+```
+
+如果你已经知道要用哪份配置文件，也可以继续显式传入 `--config`；显式配置会覆盖 `--model` 的默认映射。
+
+`PIDNet-S` 接入意义、适用场景和使用说明见 [docs/pidnet-mainflow.md](docs/pidnet-mainflow.md)。
+
 ## 配置原则
 
 - 路径集中在 `configs/paths.yaml`，核心逻辑不硬编码本地绝对路径。
@@ -68,6 +82,7 @@ python scripts/validate_segmentation_demo.py
 - 本地环境实测结果见 `docs/environment-baseline.md`；开发机快照不能替代尚待确认的目标 GPU 配置。
 - 任务 4 采用 Lost and Found 与 RoadObstacle21；20 张叠加图的规则、位置与许可边界见 `docs/sample-visualization.md`。
 - 任务 5 的模型版本、运行产物、实测指标和限制见 `docs/segmentation-demo.md`。
+- `PIDNet-S` 主流程接入、意义说明和使用方式见 `docs/pidnet-mainflow.md`。
 - 任务 6 的冻结数据划分、输入尺寸、指标口径和变更规则见 `docs/experiment-plan-v1.md`。
 - 每个权重只在 `checkpoints/index.yaml` 登记版本、来源和校验信息。
 - 每次实验应在独立的 `outputs/<run_id>/` 下保存配置快照、版本、随机种子、日志和结果。
