@@ -9,10 +9,20 @@ from pathlib import Path
 from driver_vision_risk import __version__
 
 
+MODEL_CONFIGS = {
+    "segformer": "configs/models/segformer_cityscapes.yaml",
+    "pidnet": "configs/models/pidnet_s_cityscapes.yaml",
+}
+
+
 def _project_root() -> Path:
     """根据已安装源码位置返回仓库根目录，避免硬编码本机绝对路径。"""
 
-    return Path(__file__).resolve().parents[2]
+    current = Path(__file__).resolve()
+    for candidate in (current.parent, *current.parents):
+        if (candidate / "pyproject.toml").is_file():
+            return candidate
+    raise RuntimeError(f"cannot resolve project root from {current}")
 
 
 def _layout() -> dict[str, str]:
@@ -29,6 +39,14 @@ def _layout() -> dict[str, str]:
         "checkpoints": str(root / "checkpoints"),
         "outputs": str(root / "outputs"),
     }
+
+
+def _resolve_segment_config(model_name: str, config_path: Path | None) -> Path:
+    """优先使用显式配置路径；否则按主流程模型名映射默认配置。"""
+
+    if config_path is not None:
+        return config_path
+    return _project_root() / MODEL_CONFIGS[model_name]
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -49,10 +67,16 @@ def build_parser() -> argparse.ArgumentParser:
     segment.add_argument("--input", type=Path, required=True, help="input image or video path")
     segment.add_argument("--output", type=Path, required=True, help="output run directory")
     segment.add_argument(
+        "--model",
+        choices=sorted(MODEL_CONFIGS),
+        default="segformer",
+        help="choose a built-in drivable-area model without typing the config path",
+    )
+    segment.add_argument(
         "--config",
         type=Path,
-        default=_project_root() / "configs/models/segformer_cityscapes.yaml",
-        help="segmentation model YAML configuration",
+        default=None,
+        help="optional segmentation model YAML configuration that overrides --model",
     )
     return parser
 
@@ -68,7 +92,7 @@ def main(argv: list[str] | None = None) -> int:
         # 延迟导入推理依赖，使目录查看和 ``--help`` 无需加载 PyTorch。
         from driver_vision_risk.inference.drivable_area import run_demo
 
-        result = run_demo(args.input, args.output, args.config)
+        result = run_demo(args.input, args.output, _resolve_segment_config(args.model, args.config))
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
 

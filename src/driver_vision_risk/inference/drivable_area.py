@@ -13,6 +13,7 @@ import numpy as np
 import yaml
 from PIL import Image
 
+from driver_vision_risk.models.pidnet import PidnetDrivableAreaSegmenter
 from driver_vision_risk.models.segformer import (
     DrivableAreaPrediction,
     SegformerDrivableAreaSegmenter,
@@ -74,14 +75,22 @@ def _base_metadata(
 ) -> dict[str, Any]:
     """生成图像和视频共用的可追溯运行元数据。"""
 
-    import torch
-    import transformers
-
     # 仓库内输入记录相对路径；外部输入仅记录文件名，避免泄露用户目录。
     try:
         recorded_input_path = input_path.relative_to(project_root).as_posix()
     except ValueError:
         recorded_input_path = input_path.name
+    framework = str(config["runtime"]["framework"])
+    runtime_versions: dict[str, Any] = {"python": platform.python_version(), "framework": framework}
+    if framework == "pytorch":
+        import torch
+        import transformers
+
+        runtime_versions.update({"torch": torch.__version__, "transformers": transformers.__version__})
+    elif framework == "onnxruntime":
+        import onnxruntime as ort
+
+        runtime_versions.update({"onnxruntime": ort.__version__})
     return {
         "schema_version": 1,
         "created_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
@@ -98,9 +107,7 @@ def _base_metadata(
             "road_class_names": config["segmentation"]["road_class_names"],
         },
         "runtime": {
-            "python": platform.python_version(),
-            "torch": torch.__version__,
-            "transformers": transformers.__version__,
+            **runtime_versions,
             **prediction_metrics,
         },
     }
@@ -245,7 +252,14 @@ def run_demo(input_path: Path, output_directory: Path, config_path: Path) -> dic
         raise FileNotFoundError(f"input file not found: {input_path}")
     # 默认配置位于 ``<root>/configs/models``，向上两级得到仓库根目录。
     project_root = config_path.parents[2]
-    segmenter = SegformerDrivableAreaSegmenter(config_path, project_root)
+    config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    architecture = str(config["model"]["architecture"])
+    if architecture == "SegformerForSemanticSegmentation":
+        segmenter = SegformerDrivableAreaSegmenter(config_path, project_root)
+    elif architecture == "PIDNet-S":
+        segmenter = PidnetDrivableAreaSegmenter(config_path, project_root)
+    else:
+        raise ValueError(f"unsupported segmentation architecture: {architecture}")
     suffix = input_path.suffix.lower()
     if suffix in IMAGE_SUFFIXES:
         return run_image_demo(input_path, output_directory.resolve(), segmenter)
