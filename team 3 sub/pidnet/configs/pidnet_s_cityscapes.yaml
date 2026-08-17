@@ -1,0 +1,40 @@
+schema_version: 1
+
+model:
+  id: pidnet-s-cityscapes-onnx-float
+  architecture: PIDNet-S
+  repository: qualcomm/PidNet
+  revision: v0.59.0
+  local_directory: team 3 sub/pidnet/checkpoints/pidnet-s-cityscapes-onnx-float
+  weights_file: pidnet.onnx
+  weights_size_bytes: 86841
+  weights_sha256: cd4a464c2a4426bf52fcff8e53949db001b8d4c0939aa2086ae7e4ce9841783d
+  external_data_file: pidnet.data
+  external_data_size_bytes: 30481792
+  external_data_sha256: 60ab70116f6e673a733970bc23cfe7d09cb5f017b4acb41e27c7e6c45b2a9572
+  metadata_file: metadata.json
+  metadata_sha256: b9ccb3abb867e0a74827336fea5169f6f59b1f74ab194c1f5446089395b3e7b9
+  labels_file: labels.txt
+  labels_sha256: 48cab81b30ea4ee4f3b07ee136cb7e52c71de093d7bf834211ce29269ddfb196
+  asset_url: https://qaihub-public-assets.s3.us-west-2.amazonaws.com/qai-hub-models/models/pidnet/releases/v0.59.0/pidnet-onnx-float.zip
+
+runtime:
+  framework: onnxruntime
+  device: auto
+  provider_priority: [CUDAExecutionProvider, CPUExecutionProvider]
+  input_height: 1024
+  input_width: 2048
+
+segmentation:
+  road_class_ids: [0]
+  road_class_names: [road]
+  confidence_threshold: null
+
+visualization:
+  road_color_rgb: [59, 130, 246]
+  boundary_color_rgb: [255, 255, 255]
+  overlay_alpha: 0.55
+  boundary_width: 2
+
+video:
+  output_codec: mp4v
