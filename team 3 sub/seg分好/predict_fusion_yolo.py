@@ -13,6 +13,22 @@ from configs.config import Config
 from utils.utils import ensure_dir
 
 
+# ==================== 新增：形态学精修函数 ====================
+def refine_mask(mask, kernel_size=5, iterations=1):
+    """
+    对二值掩膜进行形态学优化：
+    1. 闭运算（先膨胀后腐蚀）→ 填补小孔、连接断裂区域
+    2. 开运算（先腐蚀后膨胀）→ 去除孤立噪点
+    """
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
+    # 闭运算
+    closed = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=iterations)
+    # 开运算
+    refined = cv2.morphologyEx(closed, cv2.MORPH_OPEN, kernel, iterations=iterations)
+    return refined
+# =============================================================
+
+
 def main():
 
     cfg = Config
@@ -140,13 +156,16 @@ def main():
 
         print("预测:", name)
 
+        # ---------- 1. 获取道路掩膜 ----------
         road_mask = predict_road(image)
-        vehicle_mask = detect_vehicle(img_np)
 
-        final_mask = fusion(
-            road_mask,
-            vehicle_mask,
-        )
+        # ---------- 2. 【新增】形态学精修道路掩膜 ----------
+        # 可调整 kernel_size（如 5）和 iterations（如 1）
+        road_mask = refine_mask(road_mask, kernel_size=5, iterations=1)
+
+        # ---------- 3. 获取车辆掩膜并融合 ----------
+        vehicle_mask = detect_vehicle(img_np)
+        final_mask = fusion(road_mask, vehicle_mask)
 
         save_path = os.path.join(
             cfg.MASK_OUTPUT_DIR,
