@@ -1,0 +1,16 @@
+# Web Demo 后端依赖（CUDA 版，适用于 NVIDIA GPU）
+# GPU 安装（推荐，需 NVIDIA 驱动）:
+#   python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+# 无 GPU 时安装 CPU 版:
+#   python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+# 然后: pip install -r requirements.txt
+torch>=2.0
+torchvision
+transformers>=4.40
+ultralytics
+opencv-python-headless
+pillow
+numpy
+fastapi
+uvicorn
+python-multipart
