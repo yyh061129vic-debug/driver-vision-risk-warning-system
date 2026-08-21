@@ -1,0 +1,59 @@
+CUDNN:
+  BENCHMARK: true
+  DETERMINISTIC: false
+  ENABLED: true
+
+GPUS: (0,)
+OUTPUT_DIR: 'D:/pidnet_drivable_retrain/train'
+LOG_DIR: 'D:/pidnet_drivable_retrain/tb'
+WORKERS: 0
+PRINT_FREQ: 20
+
+DATASET:
+  DATASET: bdd_drivable
+  ROOT: 'D:/bdd100k/'
+  TRAIN_SET: 'list/bdd100k_drivable/train_pilot.lst'
+  TEST_SET: 'list/bdd100k_drivable/val_pilot.lst'
+  NUM_CLASSES: 2
+
+MODEL:
+  NAME: pidnet_small
+  NUM_OUTPUTS: 2
+  PRETRAINED: 'D:/pidnet_semantic_retrain/train/bdd_semantic/pidnet_small_bdd_semantic_retrain/best.pt'
+  ALIGN_CORNERS: true
+
+LOSS:
+  USE_OHEM: false
+  BALANCE_WEIGHTS: [0.4, 1.0]
+  SB_WEIGHTS: 1.0
+
+TRAIN:
+  IMAGE_SIZE:
+  - 640
+  - 384
+  BASE_SIZE: 1280
+  BATCH_SIZE_PER_GPU: 8
+  SHUFFLE: true
+  BEGIN_EPOCH: 0
+  END_EPOCH: 100
+  RESUME: true
+  OPTIMIZER: sgd
+  LR: 0.01
+  WD: 0.0005
+  MOMENTUM: 0.9
+  NESTEROV: false
+  FLIP: true
+  MULTI_SCALE: true
+  IGNORE_LABEL: 255
+  SCALE_FACTOR: 16
+
+TEST:
+  IMAGE_SIZE:
+  - 1280
+  - 720
+  BASE_SIZE: 1280
+  BATCH_SIZE_PER_GPU: 1
+  FLIP_TEST: false
+  MULTI_SCALE: false
+  MODEL_FILE: ''
+  OUTPUT_INDEX: 1
